@@ -1636,9 +1636,18 @@ class FullNode:
                         await self.server.send_to_all_except([msg], NodeType.FULL_NODE, peer.peer_node_id)
                 else:
                     self.mempool_manager.remove_seen(spend_name)
-                    self.log.debug(
-                        f"Wasn't able to add transaction with id {spend_name}, " f"status {status} error: {error}"
-                    )
+
+                    # Coin amount negative not logged, due to many clients older than 1.1.5 sending these transactions
+                    if error != Err.DOUBLE_SPEND and error != Err.COIN_AMOUNT_NEGATIVE:
+                        self.log.warning(
+                            f"Wasn't able to add transaction with id {spend_name}, " f"status {status} error: {error}"
+                        )
+                    else:
+                        self.log.info(
+                            f"Wasn't able to add transaction with id {spend_name}, "
+                            f"status {status} "
+                            f"error: {error}"
+                        )
         return status, error
 
     async def _needs_compact_proof(
